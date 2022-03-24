@@ -16,6 +16,7 @@ class KWasm3Test {
         var f64callbackResult: Double? = null
         var function2Result: Pair<Int, Int>? = null
         var function3Result: Triple<Int, Int, Int>? = null
+        var iIIIResult: Int? = null
 
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val firmware = context.assets.open("callback.wasm")
@@ -35,6 +36,7 @@ class KWasm3Test {
             .withHostFunction<Int, Int, Int, Int>("env", "i_iii") { p1, p2, p3 ->
                 return@withHostFunction p1 + p2 + p3
             }
+            .withHostFunction<Int, Unit>("env", "i_iii_result"){p1 -> iIIIResult = p1}
             .build()
             .execute("call")
 
@@ -44,6 +46,7 @@ class KWasm3Test {
         assertEquals(42.0, f64callbackResult)
         assertEquals(Pair(0, 1), function2Result)
         assertEquals(Triple(3, 2, 1), function3Result)
+        assertEquals(15, iIIIResult)
     }
 
     @Test
