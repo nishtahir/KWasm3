@@ -14,7 +14,27 @@ let kwasm3 = KWasm3.builder()
     .execute("myExportedFunction")
 ```
 
+## Development
+
+### Requirements
+
+* Android Studio
+* Android NDK (Installable through the Android SDK Manager)
+* Rust (wasm32-unknown-unknown target) - Optional to compile WASM modules for tests
+
+### Setup
+
+1. Clone the repository to your local machine.
+2. Open Android Studio, and Choose "New Project from Existing Sources"
+3. Open the KWasm3 directory you cloned earlier
+4. Run the setup script to download and place WASM3 source in the correct folder to link against
+    ```
+   $ ./scripts/setup.sh
+    ```
+5. Build the project or run tests in the library module
+
 ## Roadmap
+
 - [x] Bind host functions to wasm3
 - [ ] Exported functions API return values
 - [ ] Bind imported memory to WASM3
