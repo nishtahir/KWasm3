@@ -1,34 +1,79 @@
 #include "bindings.h"
 
 void *mapJvmParam(const uint64_t *_sp, JNIEnv *jniEnv, char tok) {
-    void *p1;
+    void *param;
     switch (tok) {
         case 'i': {
             int32_t i = *((int32_t *) _sp);
-            p1 = boxInteger(jniEnv, (jint) i);
+            param = boxInteger(jniEnv, (jint) i);
             break;
         }
         case 'I': {
             int64_t I = *((int64_t *) _sp);
-            p1 = boxLong(jniEnv, (jlong) I);
+            param = boxLong(jniEnv, (jlong) I);
             break;
         }
         case 'f': {
             float I = *((float *) _sp);
-            p1 = boxFloat(jniEnv, (jfloat) I);
+            param = boxFloat(jniEnv, (jfloat) I);
             break;
         }
         case 'F': {
             double I = *((double *) _sp);
-            p1 = boxDouble(jniEnv, (jdouble) I);
+            param = boxDouble(jniEnv, (jdouble) I);
             break;
         }
         default: {
-            p1 = nullptr;
+            param = nullptr;
         }
     }
-    return p1;
+    return param;
 }
+
+
+const char *
+mapJvmReturnValue(JNIEnv *jniEnv, char rType, const void *raw_return, jobject jvmRVal) {
+    switch (rType) {
+        case 'i': {
+            jclass iClazz = jniEnv->FindClass("java/lang/Integer");
+            jmethodID methodID = jniEnv->GetMethodID(iClazz, "intValue", "()I");
+            int32_t val = jniEnv->CallIntMethod(jvmRVal, methodID);
+            *(int32_t *) raw_return = val;
+            return m3Err_none;
+        }
+        case 'I': {
+            jclass iClazz = jniEnv->FindClass("java/lang/Long");
+            jmethodID methodID = jniEnv->GetMethodID(iClazz, "longValue", "()J");
+            int64_t val = jniEnv->CallLongMethod(jvmRVal, methodID);
+            *(int64_t *) raw_return = val;
+            return m3Err_none;
+        }
+            // TODO add float and double
+        default: {
+            return m3Err_none;
+        }
+    }
+}
+
+void allocate_raw_return(char rType, uint64_t *&_sp, void *&raw_return) {
+    switch (rType) {
+        case 'i': {
+            raw_return = ((int32_t *) (_sp++));
+            break;
+        }
+        case 'I': {
+            raw_return = ((int64_t *) (_sp++));
+            break;
+        }
+        default: {
+            // No-op
+            // raw_return remains a null pointer do not increment
+            // _sp because this is a void function
+            break;
+        }
+    }
+}
+
 
 const void *
 m3_host_function0(IM3Runtime _runtime, IM3ImportContext _ctx, uint64_t *_sp, void *_mem) {
@@ -39,8 +84,12 @@ m3_host_function0(IM3Runtime _runtime, IM3ImportContext _ctx, uint64_t *_sp, voi
     auto invokeId = jniEnv->GetMethodID(clazz, "invoke",
                                         "()Ljava/lang/Object;");
 
-    jniEnv->CallObjectMethod(obj->context, invokeId);
-    m3ApiSuccess()
+    auto rType = obj->signature.at(0);
+    void *raw_return;
+    allocate_raw_return(rType, _sp, raw_return);
+
+    auto jvmRVal = jniEnv->CallObjectMethod(obj->context, invokeId);
+    return mapJvmReturnValue(jniEnv, rType, raw_return, jvmRVal);
 }
 
 const void *
@@ -52,11 +101,15 @@ m3_host_function1(IM3Runtime _runtime, IM3ImportContext ctx, uint64_t *_sp, void
     auto invokeId = jniEnv->GetMethodID(clazz, "invoke",
                                         "(Ljava/lang/Object;)Ljava/lang/Object;");
 
-    void *p1;
-    p1 = mapJvmParam(++_sp, jniEnv, obj->signature.at(2));
+    auto rType = obj->signature.at(0);
+    void *raw_return;
+    allocate_raw_return(rType, _sp, raw_return);
 
-    jniEnv->CallObjectMethod(obj->context, invokeId, p1);
-    m3ApiSuccess()
+    void *p1;
+    p1 = mapJvmParam(_sp++, jniEnv, obj->signature.at(2));
+
+    auto jvmRVal = jniEnv->CallObjectMethod(obj->context, invokeId, p1);
+    return mapJvmReturnValue(jniEnv, rType, raw_return, jvmRVal);
 }
 
 const void *
@@ -68,13 +121,17 @@ m3_host_function2(IM3Runtime runtime, IM3ImportContext ctx, uint64_t *_sp, void 
     auto invokeId = jniEnv->GetMethodID(clazz, "invoke",
                                         "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;");
 
+    auto rType = obj->signature.at(0);
+    void *raw_return;
+    allocate_raw_return(rType, _sp, raw_return);
+
     void *p1;
     void *p2;
-    p1 = mapJvmParam(++_sp, jniEnv, obj->signature.at(2));
-    p2 = mapJvmParam(++_sp, jniEnv, obj->signature.at(3));
+    p1 = mapJvmParam(_sp++, jniEnv, obj->signature.at(2));
+    p2 = mapJvmParam(_sp++, jniEnv, obj->signature.at(3));
 
-    jniEnv->CallObjectMethod(obj->context, invokeId, p1, p2);
-    m3ApiSuccess()
+    auto jvmRVal = jniEnv->CallObjectMethod(obj->context, invokeId, p1, p2);
+    return mapJvmReturnValue(jniEnv, rType, raw_return, jvmRVal);
 }
 
 const void *
@@ -86,34 +143,17 @@ m3_host_function3(IM3Runtime runtime, IM3ImportContext ctx, uint64_t *_sp, void 
     auto invokeId = jniEnv->GetMethodID(clazz, "invoke",
                                         "(Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;");
 
+    auto rType = obj->signature.at(0);
+    void *raw_return;
+    allocate_raw_return(rType, _sp, raw_return);
+
     void *p1;
     void *p2;
     void *p3;
-    p1 = mapJvmParam(++_sp, jniEnv, obj->signature.at(2));
-    p2 = mapJvmParam(++_sp, jniEnv, obj->signature.at(3));
-    p3 = mapJvmParam(++_sp, jniEnv, obj->signature.at(4));
+    p1 = mapJvmParam(_sp++, jniEnv, obj->signature.at(2));
+    p2 = mapJvmParam(_sp++, jniEnv, obj->signature.at(3));
+    p3 = mapJvmParam(_sp++, jniEnv, obj->signature.at(4));
 
     auto jvmRVal = jniEnv->CallObjectMethod(obj->context, invokeId, p1, p2, p3);
-    // i(iii)
-
-    auto rType = obj->signature.at(0);
-    switch (rType) {
-        case 'i': {
-            m3ApiReturnType(int32_t)
-            jclass iClazz = jniEnv->FindClass("java/lang/Integer");
-            jmethodID methodID = jniEnv->GetMethodID(iClazz, "intValue", "()I");
-            int32_t val = jniEnv->CallIntMethod(jvmRVal, methodID);
-            m3ApiReturn(val)
-        }
-        case 'I': {
-            m3ApiReturnType(int64_t)
-            jclass iClazz = jniEnv->FindClass("java/lang/Long");
-            jmethodID methodID = jniEnv->GetMethodID(iClazz, "longValue", "()J");
-            int64_t val = jniEnv->CallLongMethod(jvmRVal, methodID);
-            m3ApiReturn(val)
-        }
-        default: {
-            m3ApiSuccess()
-        }
-    }
+    return mapJvmReturnValue(jniEnv, rType, raw_return, jvmRVal);
 }
