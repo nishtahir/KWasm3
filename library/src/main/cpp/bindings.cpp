@@ -53,7 +53,7 @@ m3_host_function1(IM3Runtime _runtime, IM3ImportContext ctx, uint64_t *_sp, void
                                         "(Ljava/lang/Object;)Ljava/lang/Object;");
 
     void *p1;
-    p1 = mapJvmParam(_sp++, jniEnv, obj->signature.at(2));
+    p1 = mapJvmParam(++_sp, jniEnv, obj->signature.at(2));
 
     jniEnv->CallObjectMethod(obj->context, invokeId, p1);
     m3ApiSuccess()
@@ -70,8 +70,8 @@ m3_host_function2(IM3Runtime runtime, IM3ImportContext ctx, uint64_t *_sp, void 
 
     void *p1;
     void *p2;
-    p1 = mapJvmParam(_sp++, jniEnv, obj->signature.at(2));
-    p2 = mapJvmParam(_sp++, jniEnv, obj->signature.at(3));
+    p1 = mapJvmParam(++_sp, jniEnv, obj->signature.at(2));
+    p2 = mapJvmParam(++_sp, jniEnv, obj->signature.at(3));
 
     jniEnv->CallObjectMethod(obj->context, invokeId, p1, p2);
     m3ApiSuccess()
@@ -89,21 +89,31 @@ m3_host_function3(IM3Runtime runtime, IM3ImportContext ctx, uint64_t *_sp, void 
     void *p1;
     void *p2;
     void *p3;
-    p1 = mapJvmParam(_sp++, jniEnv, obj->signature.at(2));
-    p2 = mapJvmParam(_sp++, jniEnv, obj->signature.at(3));
-    p3 = mapJvmParam(_sp++, jniEnv, obj->signature.at(4));
+    p1 = mapJvmParam(++_sp, jniEnv, obj->signature.at(2));
+    p2 = mapJvmParam(++_sp, jniEnv, obj->signature.at(3));
+    p3 = mapJvmParam(++_sp, jniEnv, obj->signature.at(4));
 
     auto jvmRVal = jniEnv->CallObjectMethod(obj->context, invokeId, p1, p2, p3);
     // i(iii)
-    auto rType = obj->signature.at(0);
 
-    void *rVal;
+    auto rType = obj->signature.at(0);
     switch (rType) {
         case 'i': {
-            rVal = (int32_t *) jvmRVal;
+            m3ApiReturnType(int32_t)
+            jclass iClazz = jniEnv->FindClass("java/lang/Integer");
+            jmethodID methodID = jniEnv->GetMethodID(iClazz, "intValue", "()I");
+            int32_t val = jniEnv->CallIntMethod(jvmRVal, methodID);
+            m3ApiReturn(val)
+        }
+        case 'I': {
+            m3ApiReturnType(int64_t)
+            jclass iClazz = jniEnv->FindClass("java/lang/Long");
+            jmethodID methodID = jniEnv->GetMethodID(iClazz, "longValue", "()J");
+            int64_t val = jniEnv->CallLongMethod(jvmRVal, methodID);
+            m3ApiReturn(val)
+        }
+        default: {
+            m3ApiSuccess()
         }
     }
-
-    // Push the return value to the WASM stack
-    m3ApiSuccess()
 }

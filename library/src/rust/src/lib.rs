@@ -6,6 +6,7 @@ extern "C" {
     fn function2(p1: i32, p2: i32);
     fn function3(p1: i32, p2: i32, p3: i32);
     fn i_iii(p1: i32, p2: i32, p3: i32) -> i32;
+    fn i_iii_result(p1: i32);
 }
 
 #[no_mangle]
@@ -16,7 +17,8 @@ unsafe fn call() {
     f64callback(42.0);
     function2(0, 1);
     function3(3, 2, 1);
-    i_iii(4, 5, 6);
+    let res = i_iii(4, 5, 6);
+    i_iii_result(res);
 }
 
 // extern "C" {
