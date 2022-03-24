@@ -1,56 +1,23 @@
 extern "C" {
-    fn i32callback(value: i32);
-    fn i64callback(value: i64);
-    fn f32callback(value: f32);
-    fn f64callback(value: f64);
-    fn function2(p1: i32, p2: i32);
-    fn function3(p1: i32, p2: i32, p3: i32);
-    fn i_iii(p1: i32, p2: i32, p3: i32) -> i32;
-    fn i_iii_result(p1: i32);
+    fn i_i(value: i32) -> i32;
+    fn i_()->i32;
+    fn v_i(p1: i32);
+    fn I_I(value: i64) -> i64;
+    fn I_()->i64;
+    fn v_I(p1: i64);
+    fn v_f(value: f32);
+    fn v_F(value: f64);
+    fn v_ii(p1: i32, p2: i32);
+    fn i_iii(p1: i32, p2: i32, p3: i32);
 }
 
 #[no_mangle]
 unsafe fn call() {
-    i32callback(42);
-    i64callback(42);
-    f32callback(42.0);
-    f64callback(42.0);
-    function2(0, 1);
-    function3(3, 2, 1);
-    let res = i_iii(4, 5, 6);
-    i_iii_result(res);
+    let res = i_i(42);
+    v_i(res);
+    I_I(42);
+    v_f(42.0);
+    v_F(42.0);
+    v_ii(0, 1);
+    i_iii(3, 2, 1);
 }
-
-// extern "C" {
-//     #[link_name = "pinMode"]
-//     fn pin_mode(pin: i32, mode: i32);
-
-//     #[link_name = "digitalWrite"]
-//     fn digital_write(pin: i32, state: i32);
-
-//     fn delay(millis: i32);
-// }
-
-// #[no_mangle]
-// unsafe fn _start() {
-//     pin_mode(LED, OUTPUT);
-//     digital_write(LED, HIGH);
-//     delay(1000);
-//     digital_write(LED, LOW);
-// }
-
-// const LED: i32 = 0x02;
-// const OUTPUT: i32 = 0x01;
-// const LOW: i32 = 0x00;
-// const HIGH: i32 = 0x01;
-
-// unsafe fn _setup() {
-//     pin_mode(LED, OUTPUT);
-// }
-
-// unsafe fn _loop() {
-//     digital_write(LED, LOW);
-//     delay(1000);
-//     digital_write(LED, HIGH);
-//     delay(1000);
-// }

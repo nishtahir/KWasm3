@@ -3,50 +3,45 @@ package com.nishtahir.kwasm3
 import android.util.Log
 import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Assert.*
+import org.junit.Before
 
 import org.junit.Test
 
 class KWasm3Test {
 
-    @Test
-    fun testCallbackWithi32() {
-        var i32callbackResult: Int? = null
-        var i64callbackResult: Long? = null
-        var f32callbackResult: Float? = null
-        var f64callbackResult: Double? = null
-        var function2Result: Pair<Int, Int>? = null
-        var function3Result: Triple<Int, Int, Int>? = null
-        var iIIIResult: Int? = null
+    private val context = InstrumentationRegistry.getInstrumentation().targetContext
+    private val firmware = context.assets.open("callback.wasm")
 
-        val context = InstrumentationRegistry.getInstrumentation().targetContext
-        val firmware = context.assets.open("callback.wasm")
-        KWasm3.builder()
+    private lateinit var kwasm3: KWasm3.Builder
+
+    @Before
+    fun setup() {
+        kwasm3 = KWasm3.builder()
             .withBinaryModule("module", firmware)
             .withStackSize(8192)
-            .withHostFunction<Int, Unit>("env", "i32callback") { p1 -> i32callbackResult = p1 }
-            .withHostFunction<Long, Unit>("env", "i64callback") { p1 -> i64callbackResult = p1 }
-            .withHostFunction<Float, Unit>("env", "f32callback") { p1 -> f32callbackResult = p1 }
-            .withHostFunction<Double, Unit>("env", "f64callback") { p1 -> f64callbackResult = p1 }
-            .withHostFunction<Int, Int, Unit>("env", "function2") { p1, p2 ->
-                function2Result = Pair(p1, p2)
-            }
-            .withHostFunction<Int, Int, Int, Unit>("env", "function3") { p1, p2, p3 ->
-                function3Result = Triple(p1, p2, p3)
-            }
-            .withHostFunction<Int, Int, Int, Int>("env", "i_iii") { p1, p2, p3 ->
-                return@withHostFunction p1 + p2 + p3
-            }
-            .withHostFunction<Int, Unit>("env", "i_iii_result"){p1 -> iIIIResult = p1}
+            .withHostFunction<Int, Int>("env", "i_i"){p1 -> p1}
+            .withHostFunction<Int>("env", "i_"){0}
+            .withHostFunction<Int, Unit>("env", "v_i") {}
+            .withHostFunction<Long, Long>("env", "I_I"){p1 -> p1}
+            .withHostFunction<Long>("env", "I_"){0L}
+            .withHostFunction<Long, Unit>("env", "v_I"){}
+            .withHostFunction<Float, Unit>("env", "v_f"){}
+            .withHostFunction<Double, Unit>("env", "v_F"){}
+            .withHostFunction<Int, Int, Unit>("env", "v_ii"){_,_->}
+            .withHostFunction<Int, Int, Int, Unit>("env", "i_iii"){_,_,_->}
+    }
+
+    @Test
+    fun testi32Bindings() {
+        var result: Int? = null
+
+        kwasm3
+            .withHostFunction<Int, Unit>("env", "v_i") { p1 -> result = p1 }
+            .withHostFunction<Int, Int>("env", "i_i"){p1 -> p1 * p1}
             .build()
             .execute("call")
 
-        assertEquals(42, i32callbackResult)
-        assertEquals(42L, i64callbackResult)
-        assertEquals(42.0F, f32callbackResult)
-        assertEquals(42.0, f64callbackResult)
-        assertEquals(Pair(0, 1), function2Result)
-        assertEquals(Triple(3, 2, 1), function3Result)
-        assertEquals(15, iIIIResult)
+        assertEquals(1764, result)
     }
 
     @Test

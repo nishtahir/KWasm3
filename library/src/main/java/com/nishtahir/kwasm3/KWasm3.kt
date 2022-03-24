@@ -33,7 +33,7 @@ class KWasm3 internal constructor(
         var moduleName: String? = null
         var module: ByteArray? = null
         var stackSize: Int = 0
-        val hostFunctions: MutableList<HostFunction> = mutableListOf()
+        val hostFunctions: MutableMap<Pair<String, String>, HostFunction> = mutableMapOf()
 
         fun withBinaryModule(moduleName: String, binaryStream: InputStream) = apply {
             this.moduleName = moduleName
@@ -54,16 +54,14 @@ class KWasm3 internal constructor(
             name: String,
             crossinline block: () -> R
         ) = apply {
-            this.hostFunctions.add(
-                object : HostFunction0<R> {
-                    override fun getNamespace(): String = namespace
-                    override fun getName(): String = name
-                    override fun getSignature(): String =
-                        serializeFunctionSignature(emptyList(), R::class)
+            this.hostFunctions[namespace to name] = object : HostFunction0<R> {
+                override fun getNamespace(): String = namespace
+                override fun getName(): String = name
+                override fun getSignature(): String =
+                    serializeFunctionSignature(emptyList(), R::class)
 
-                    override fun invoke(): R = block()
-                }
-            )
+                override fun invoke(): R = block()
+            }
         }
 
         inline fun <reified P1, reified R> withHostFunction(
@@ -71,16 +69,14 @@ class KWasm3 internal constructor(
             name: String,
             crossinline block: (P1) -> R
         ) = apply {
-            this.hostFunctions.add(
-                object : HostFunction1<P1, R> {
-                    override fun getNamespace(): String = namespace
-                    override fun getName(): String = name
-                    override fun getSignature(): String =
-                        serializeFunctionSignature(listOf(P1::class), R::class)
+            this.hostFunctions[namespace to name] = object : HostFunction1<P1, R> {
+                override fun getNamespace(): String = namespace
+                override fun getName(): String = name
+                override fun getSignature(): String =
+                    serializeFunctionSignature(listOf(P1::class), R::class)
 
-                    override fun invoke(p1: P1): R = block(p1)
-                }
-            )
+                override fun invoke(p1: P1): R = block(p1)
+            }
         }
 
         inline fun <reified P1, reified P2, reified R> withHostFunction(
@@ -88,16 +84,14 @@ class KWasm3 internal constructor(
             name: String,
             crossinline block: (P1, P2) -> R
         ) = apply {
-            this.hostFunctions.add(
-                object : HostFunction2<P1, P2, R> {
-                    override fun getNamespace(): String = namespace
-                    override fun getName(): String = name
-                    override fun getSignature(): String =
-                        serializeFunctionSignature(listOf(P1::class, P2::class), R::class)
+            this.hostFunctions[namespace to name] = object : HostFunction2<P1, P2, R> {
+                override fun getNamespace(): String = namespace
+                override fun getName(): String = name
+                override fun getSignature(): String =
+                    serializeFunctionSignature(listOf(P1::class, P2::class), R::class)
 
-                    override fun invoke(p1: P1, p2: P2): R = block(p1, p2)
-                }
-            )
+                override fun invoke(p1: P1, p2: P2): R = block(p1, p2)
+            }
         }
 
         inline fun <reified P1, reified P2, reified P3, reified R> withHostFunction(
@@ -105,24 +99,22 @@ class KWasm3 internal constructor(
             name: String,
             crossinline block: (P1, P2, P3) -> R
         ) = apply {
-            this.hostFunctions.add(
-                object : HostFunction3<P1, P2, P3, R> {
-                    override fun getNamespace(): String = namespace
-                    override fun getName(): String = name
-                    override fun getSignature(): String =
-                        serializeFunctionSignature(
-                            listOf(P1::class, P2::class, P3::class),
-                            R::class
-                        )
+            this.hostFunctions[namespace to name] = object : HostFunction3<P1, P2, P3, R> {
+                override fun getNamespace(): String = namespace
+                override fun getName(): String = name
+                override fun getSignature(): String =
+                    serializeFunctionSignature(
+                        listOf(P1::class, P2::class, P3::class),
+                        R::class
+                    )
 
-                    override fun invoke(p1: P1, p2: P2, p3: P3): R = block(p1, p2, p3)
-                }
-            )
+                override fun invoke(p1: P1, p2: P2, p3: P3): R = block(p1, p2, p3)
+            }
         }
 
         fun build(): KWasm3 {
             require(stackSize > 0) { "'stackSize' must be greater than 0" }
-            return KWasm3(moduleName!!, module!!, stackSize, hostFunctions)
+            return KWasm3(moduleName!!, module!!, stackSize, hostFunctions.values.toList())
         }
     }
 

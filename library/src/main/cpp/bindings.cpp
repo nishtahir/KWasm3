@@ -48,7 +48,20 @@ mapJvmReturnValue(JNIEnv *jniEnv, char rType, const void *raw_return, jobject jv
             *(int64_t *) raw_return = val;
             return m3Err_none;
         }
-            // TODO add float and double
+        case 'f': {
+            jclass iClazz = jniEnv->FindClass("java/lang/Float");
+            jmethodID methodID = jniEnv->GetMethodID(iClazz, "floatValue", "()F");
+            float val = jniEnv->CallFloatMethod(jvmRVal, methodID);
+            *(float *) raw_return = val;
+            return m3Err_none;
+        }
+        case 'F': {
+            jclass iClazz = jniEnv->FindClass("java/lang/Double");
+            jmethodID methodID = jniEnv->GetMethodID(iClazz, "doubleValue", "()D");
+            double val = jniEnv->CallDoubleMethod(jvmRVal, methodID);
+            *(double *) raw_return = val;
+            return m3Err_none;
+        }
         default: {
             return m3Err_none;
         }
@@ -63,6 +76,14 @@ void allocate_raw_return(char rType, uint64_t *&_sp, void *&raw_return) {
         }
         case 'I': {
             raw_return = ((int64_t *) (_sp++));
+            break;
+        }
+        case 'f': {
+            raw_return = ((float *) (_sp++));
+            break;
+        }
+        case 'F': {
+            raw_return = ((double *) (_sp++));
             break;
         }
         default: {
