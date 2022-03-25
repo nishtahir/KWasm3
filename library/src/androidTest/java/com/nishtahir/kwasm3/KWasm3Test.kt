@@ -19,33 +19,42 @@ class KWasm3Test {
         kwasm3 = KWasm3.builder()
             .withBinaryModule("module", firmware)
             .withStackSize(8192)
-            .withHostFunction<Int, Int>("env", "i_i"){p1 -> p1}
-            .withHostFunction<Int>("env", "i_"){0}
+            .withHostFunction<Int, Int>("env", "i_i") { p1 -> p1 }
+            .withHostFunction<Int>("env", "i_") { 0 }
             .withHostFunction<Int, Unit>("env", "v_i") {}
-            .withHostFunction<Long, Long>("env", "I_I"){p1 -> p1}
-            .withHostFunction<Long>("env", "I_"){0L}
-            .withHostFunction<Long, Unit>("env", "v_I"){}
-            .withHostFunction<Float, Unit>("env", "v_f"){}
-            .withHostFunction<Double, Unit>("env", "v_F"){}
-            .withHostFunction<Int, Int, Unit>("env", "v_ii"){_,_->}
-            .withHostFunction<Int, Int, Int, Unit>("env", "i_iii"){_,_,_->}
+            .withHostFunction<Long, Long>("env", "I_I") { p1 -> p1 }
+            .withHostFunction<Long>("env", "I_") { 0L }
+            .withHostFunction<Long, Unit>("env", "v_I") {}
+            .withHostFunction<Float, Unit>("env", "v_f") {}
+            .withHostFunction<Double, Unit>("env", "v_F") {}
+            .withHostFunction<Int, Int, Unit>("env", "v_ii") { _, _ -> }
+            .withHostFunction<Int, Int, Int, Unit>("env", "i_iii") { _, _, _ -> }
     }
 
     @Test
-    fun testi32Bindings() {
+    fun test_i32_Bindings() {
         var result: Int? = null
 
         kwasm3
             .withHostFunction<Int, Unit>("env", "v_i") { p1 -> result = p1 }
-            .withHostFunction<Int, Int>("env", "i_i"){p1 -> p1 * p1}
+            .withHostFunction<Int, Int>("env", "i_i") { p1 -> p1 * p1 }
             .build()
-            .execute("call")
+            .call<Unit>("call")
 
         assertEquals(1764, result)
     }
 
     @Test
-    fun execute() {
+    fun test_call__i_i() {
+        val result = kwasm3
+            .build()
+            .call<Int, Int>("test", 99)
+        assertEquals(99, result)
+    }
+
+
+    @Test
+    fun test_mock_embedded_wasm_module() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val firmware = context.assets.open("firmware.wasm")
         KWasm3.builder()
@@ -70,6 +79,6 @@ class KWasm3Test {
                 Log.d("Hello", "delay")
             }
             .build()
-            .execute("_start")
+            .call<Unit>("_start")
     }
 }

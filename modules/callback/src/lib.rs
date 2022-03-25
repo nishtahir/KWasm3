@@ -21,3 +21,9 @@ unsafe fn call() {
     v_ii(0, 1);
     i_iii(3, 2, 1);
 }
+
+#[no_mangle]
+unsafe fn test(param: i32) -> i32 {
+    param
+}
+

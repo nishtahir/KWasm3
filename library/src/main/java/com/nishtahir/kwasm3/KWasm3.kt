@@ -5,29 +5,92 @@ import java.io.FileInputStream
 import java.io.InputStream
 
 class KWasm3 internal constructor(
-    private val moduleName: String,
-    private val module: ByteArray,
-    private val stackSize: Int,
-    private val hostFunctions: List<HostFunction>
+    val moduleName: String,
+    val module: ByteArray,
+    val stackSize: Int,
+    val hostFunctions: List<HostFunction>
 ) {
 
-    fun execute(function: String) {
-        return executeModule(
+    inline fun <reified P1, reified P2, reified P3, reified R> call(
+        name: String,
+        p1: P1,
+        p2: P2,
+        p3: P3
+    ): R? {
+        val target = object : ExportedFunction3<P1, P2, P3, R> {
+            override fun getName(): String = name
+            override fun getSignature(): String =
+                serializeFunctionSignature(listOf(P1::class, P2::class, P3::class), R::class)
+
+            override fun getArgs(): Array<*> = arrayOf(p1, p2, p3)
+        }
+        return executeModuleWithTarget(
             moduleName,
             module,
             stackSize,
             hostFunctions.toTypedArray(),
-            function
+            target
         )
     }
 
-    private external fun executeModule(
+    inline fun <reified P1, reified P2, reified R> call(name: String, p1: P1, p2: P2): R? {
+        val target = object : ExportedFunction2<P1, P2, R> {
+            override fun getName(): String = name
+            override fun getSignature(): String =
+                serializeFunctionSignature(listOf(P1::class, P2::class), R::class)
+
+            override fun getArgs(): Array<*> = arrayOf(p1, p2)
+        }
+        return executeModuleWithTarget(
+            moduleName,
+            module,
+            stackSize,
+            hostFunctions.toTypedArray(),
+            target
+        )
+    }
+
+    inline fun <reified P1, reified R> call(name: String, param: P1): R? {
+        val target = object : ExportedFunction1<P1, R> {
+            override fun getName(): String = name
+            override fun getSignature(): String =
+                serializeFunctionSignature(listOf(P1::class), R::class)
+
+            override fun getArgs(): Array<*> = arrayOf(param)
+        }
+        return executeModuleWithTarget(
+            moduleName,
+            module,
+            stackSize,
+            hostFunctions.toTypedArray(),
+            target
+        )
+    }
+
+    inline fun <reified R> call(name: String): R? {
+        val target = object : ExportedFunction0<R> {
+            override fun getName(): String = name
+            override fun getSignature(): String =
+                serializeFunctionSignature(emptyList(), R::class)
+
+            override fun getArgs(): Array<*> = emptyArray<Any>()
+        }
+        return executeModuleWithTarget(
+            moduleName,
+            module,
+            stackSize,
+            hostFunctions.toTypedArray(),
+            target
+        )
+    }
+
+    external fun <R> executeModuleWithTarget(
         moduleName: String,
         module: ByteArray,
         stackSize: Int,
         hostFunctions: Array<HostFunction>,
-        function: String,
-    )
+        target: ExportedFunction,
+    ): R
 
     class Builder {
         var moduleName: String? = null

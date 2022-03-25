@@ -6,12 +6,12 @@ A JNI Wasm3 wrapper for Kotlin/Android.
 
 ```
 let wasmModuleByteArray = context.assets.open("module.wasm")
-let kwasm3 = KWasm3.builder()
+let result = KWasm3.builder()
     .withBinaryModule("module", wasmModuleByteArray)
     .withStackSize(8192)
     .withHostFunction<Int, Int>("env", "myImportedFunction"){ p1 -> p1 }
     .build()
-    .execute("myExportedFunction")
+    .call<Int>("myExportedFunction")
 ```
 
 ## Development
@@ -36,7 +36,7 @@ let kwasm3 = KWasm3.builder()
 ## Roadmap
 
 - [x] Bind host functions to wasm3
-- [ ] Exported functions API return values
+- [x] Exported functions API return values
 - [ ] Bind imported memory to WASM3
 - [ ] API to access exported memory through host functions
 - [ ] Higher order type conversions (Strings etc...)
