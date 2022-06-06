@@ -37,7 +37,9 @@ let result = KWasm3.builder()
 
 - [x] Bind host functions to wasm3
 - [x] Exported functions API return values
+- [ ] Generify native project for use on the JVM and Android
 - [ ] Bind imported memory to WASM3
+- [ ] Expose Wasm3 Memory to host functions
 - [ ] API to access exported memory through host functions
 - [ ] Higher order type conversions (Strings etc...)
 
