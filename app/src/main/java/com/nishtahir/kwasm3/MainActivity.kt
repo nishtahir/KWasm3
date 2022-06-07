@@ -3,10 +3,8 @@ package com.nishtahir.kwasm3
 import android.graphics.Color
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.util.Log
 import android.widget.Button
 import android.widget.ImageView
-import android.widget.TextView
 import com.nishtahir.kwasm3.databinding.ActivityMainBinding
 import kotlinx.coroutines.*
 import java.io.InputStream
@@ -43,7 +41,7 @@ class MainActivity : AppCompatActivity() {
                     .withHostFunction("env", "digitalWrite", ::digitalWrite)
                     .withHostFunction("env", "delay", ::delay)
                     .build()
-                    .execute("_start")
+                    .call<Unit>("_start")
             }
         }
     }
